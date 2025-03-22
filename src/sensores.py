@@ -1,19 +1,24 @@
-from gpiozero import MCP3008
+from gpiozero import MCP3008, DigitalOutputDevice, DigitalInputDevice
 from config.settings import *
+from time import time, sleep
 
 MCP_temperatura = MCP3008(channel=CH_NTC)
 MCP_humedad = MCP3008(channel=CH_HIH5030)
+trig = DigitalOutputDevice(TRIG_PIN)
+echo = DigitalInputDevice(ECHO_PIN)
 
 def temperatura() -> float:
     """
     Lee la tensión del sensor NTC y la convierte a temperatura.
     La salida es aproximadamente lineal gracias al acondicionamiento del NTC.
     Retorna la temperatura estimada en ºC. 
+    Nuestro sensor fue acondicionado para leer el oltaje de la siguiente manera:
+        v_0 (T) =  0.0825 V/(ºC)*T
     """
     voltage = MCP_temperatura.voltage
     
     # Por ejemplo: salida lineal entre 0.5V (0ºC) y 2.5V (100ºC)
-    temp = (voltage - 0.5) * 100
+    temp = voltage/0.0825
 
     return temp
 
@@ -36,3 +41,30 @@ def humedad() -> int:
     humedad = max(0, min(humedad, 100))  # Limitar entre 0% y 100%
 
     return round(humedad, 2)
+
+
+def medir_distancia():
+    # Asegurarse de que TRIG está en bajo
+    trig.off()
+    time.sleep(0.5)  # Pequeña pausa para estabilizar
+
+    # Enviar un pulso de 10 microsegundos al pin TRIG
+    trig.on()
+    time.sleep(0.00001)  # 10 microsegundos
+    trig.off()
+
+    # Esperar a que ECHO se ponga en alto (comienzo del pulso)
+    while echo.value == 0:
+        pulse_start = time.time()
+
+    # Esperar a que ECHO se ponga en bajo (fin del pulso)
+    while echo.value == 1:
+        pulse_end = time.time()
+
+    # Calcular la duración del pulso
+    pulse_duration = pulse_end - pulse_start
+
+    # Calcular la distancia (cm), asumiendo velocidad del sonido ~34300 cm/s
+    distancia = (pulse_duration * 34300) / 2
+
+    return distancia

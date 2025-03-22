@@ -1,8 +1,8 @@
 # settings.py
 
 # Pines de sensores
-PIN_TRIG = 23
-PIN_ECHO = 24
+TRIG_PIN = 23
+ECHO_PIN = 22
 
 # Canal MCP3008
 CH_NTC = 0
